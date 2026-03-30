@@ -1,0 +1,2297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1232 GLASSHOOK — QUANT ANALYSIS DESK</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060810;
+    --bg2: #0b0f1a;
+    --bg3: #0f1525;
+    --panel: #111827;
+    --border: #1e2d47;
+    --border-glow: #1e3a5f;
+    --amber: #f5a623;
+    --amber-dim: #a06d12;
+    --green: #00e5a0;
+    --green-dim: #006644;
+    --red: #ff3d6b;
+    --red-dim: #8b1030;
+    --blue: #4fc3f7;
+    --blue-dim: #1a4a6a;
+    --purple: #b388ff;
+    --text: #c8d8f0;
+    --text-dim: #4a6080;
+    --text-bright: #e8f4ff;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Orbitron', monospace;
+    --body: 'Rajdhani', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+      radial-gradient(ellipse at 20% 0%, rgba(0, 80, 160, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, rgba(245, 166, 35, 0.04) 0%, transparent 50%);
+  }
+
+  /* SCANLINE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.04) 2px,
+      rgba(0,0,0,0.04) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #0a0f1e 0%, #0d1528 100%);
+    border-bottom: 1px solid var(--amber-dim);
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 30px rgba(245,166,35,0.08);
+  }
+
+  .header-inner {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 20px;
+    padding: 12px 20px;
+  }
+
+  .logo-block { display: flex; flex-direction: column; }
+  .logo-main {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 18px;
+    color: var(--amber);
+    letter-spacing: 3px;
+    text-shadow: 0 0 20px rgba(245,166,35,0.4);
+  }
+  .logo-sub {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  .ticker-zone {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .ticker-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  input[type="text"], input[type="number"], select {
+    background: rgba(10,20,40,0.9);
+    border: 1px solid var(--border);
+    color: var(--text-bright);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 5px 10px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -moz-appearance: textfield;
+  }
+  input[type="text"]:focus, input[type="number"]:focus, select:focus {
+    border-color: var(--amber);
+    box-shadow: 0 0 12px rgba(245,166,35,0.15);
+    color: var(--amber);
+  }
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  .ticker-input { width: 90px; text-transform: uppercase; font-size: 14px !important; font-weight: bold; }
+  .account-input { width: 110px; }
+
+  .header-status {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+  }
+
+  .clock {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--amber);
+    letter-spacing: 2px;
+  }
+
+  .session-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 2px 8px;
+    border: 1px solid;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* MAIN GRID */
+  .desk {
+    display: grid;
+    grid-template-columns: 320px 1fr 300px;
+    grid-template-rows: auto auto auto;
+    gap: 1px;
+    background: var(--border);
+    min-height: calc(100vh - 60px);
+  }
+
+  .panel {
+    background: var(--panel);
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.3);
+  }
+
+  .panel-num {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    letter-spacing: 1px;
+  }
+
+  .panel-title {
+    font-family: var(--display);
+    font-size: 9px;
+    color: var(--amber);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    flex: 1;
+  }
+
+  .panel-body { padding: 12px 14px; }
+
+  /* FIELD GROUPS */
+  .field-group {
+    margin-bottom: 14px;
+  }
+
+  .field-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .field-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .index-row {
+    display: grid;
+    grid-template-columns: 1fr 100px auto;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+
+  .index-name {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+  }
+
+  .idx-input { width: 100%; }
+
+  .signal-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+  .signal-dot.bull { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .signal-dot.bear { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  .signal-dot.neut { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+
+  /* SCORE BARS */
+  .score-bar-wrap {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    height: 20px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+
+  .score-bar-fill {
+    height: 100%;
+    transition: width 0.5s ease, background 0.5s;
+    position: absolute;
+    top: 0;
+  }
+
+  .score-bar-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    z-index: 1;
+  }
+
+  /* CONVICTION VECTOR */
+  .cvec-row {
+    display: grid;
+    grid-template-columns: 70px 1fr 45px;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+
+  .cvec-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .cvec-track {
+    height: 12px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: visible;
+  }
+
+  .cvec-track::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--border-glow);
+    transform: translateX(-50%);
+  }
+
+  .cvec-fill {
+    position: absolute;
+    height: 100%;
+    top: 0;
+    transition: all 0.5s ease;
+  }
+
+  .cvec-val {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-align: right;
+  }
+
+  /* ZETA MATRIX */
+  .matrix-row {
+    display: grid;
+    grid-template-columns: 35px 30px 1fr 60px 30px;
+    gap: 6px;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(30,45,71,0.5);
+  }
+
+  .matrix-layer {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--amber);
+  }
+
+  .matrix-code {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+  }
+
+  .matrix-name {
+    font-family: var(--body);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .matrix-val {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-align: right;
+  }
+
+  .matrix-status {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-align: center;
+    padding: 2px 4px;
+    border: 1px solid;
+    letter-spacing: 1px;
+  }
+
+  /* VERDICT BOX */
+  .verdict-box {
+    background: rgba(0,0,0,0.6);
+    border: 2px solid var(--border);
+    padding: 14px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.5s, box-shadow 0.5s;
+    margin-bottom: 12px;
+  }
+
+  .verdict-box.bull-active {
+    border-color: var(--green);
+    box-shadow: 0 0 30px rgba(0,229,160,0.15), inset 0 0 30px rgba(0,229,160,0.04);
+  }
+
+  .verdict-box.bear-active {
+    border-color: var(--red);
+    box-shadow: 0 0 30px rgba(255,61,107,0.15), inset 0 0 30px rgba(255,61,107,0.04);
+  }
+
+  .verdict-box.no-trade {
+    border-color: var(--amber-dim);
+    box-shadow: 0 0 20px rgba(245,166,35,0.08);
+  }
+
+  .verdict-main {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    margin-bottom: 4px;
+    transition: color 0.5s;
+  }
+
+  .verdict-sub {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+  }
+
+  /* STAT GRID */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .stat-cell {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  .stat-val {
+    font-family: var(--display);
+    font-size: 16px;
+    font-weight: 700;
+    transition: color 0.4s;
+  }
+
+  .stat-unit {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    margin-left: 3px;
+  }
+
+  /* POSITION CALC */
+  .pos-calc {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .pos-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(30,45,71,0.4);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  .pos-row:last-child { border-bottom: none; }
+
+  .pos-key { color: var(--text-dim); }
+  .pos-val { color: var(--text-bright); font-weight: bold; }
+
+  /* FRICTION INDEX */
+  .friction-display {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .friction-cell {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    padding: 8px;
+    text-align: center;
+  }
+
+  .friction-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .friction-val {
+    font-family: var(--display);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  /* CONVICTION STATES */
+  .state-indicator {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+
+  .state-seg {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    transition: background 0.5s;
+  }
+
+  .state-seg.active-compression { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+  .state-seg.active-displacement { background: var(--blue); box-shadow: 0 0 8px var(--blue); }
+  .state-seg.active-exhaustion { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+  /* REFLECTION CHECKLIST */
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(30,45,71,0.4);
+    font-family: var(--body);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    transition: color 0.3s;
+  }
+
+  .check-item.pass { color: var(--green); }
+  .check-item.fail { color: var(--red); }
+  .check-item.warn { color: var(--amber); }
+
+  .check-icon {
+    font-size: 12px;
+    width: 16px;
+    text-align: center;
+  }
+
+  /* CANDLE INPUT ROW */
+  .candle-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .field-mini-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    margin-bottom: 3px;
+    text-transform: uppercase;
+  }
+
+  /* BOTTOM TICKER TAPE */
+  .tape {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(6,8,16,0.96);
+    border-top: 1px solid var(--border);
+    padding: 4px 0;
+    overflow: hidden;
+    z-index: 200;
+    height: 24px;
+  }
+
+  .tape-inner {
+    display: flex;
+    gap: 30px;
+    animation: scroll-tape 40s linear infinite;
+    white-space: nowrap;
+    padding: 0 20px;
+  }
+
+  @keyframes scroll-tape {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .tape-item {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .tape-item .sym { color: var(--text); font-weight: bold; }
+  .tape-item .up { color: var(--green); }
+  .tape-item .dn { color: var(--red); }
+  .tape-item .nl { color: var(--amber); }
+
+  /* GLASSHOOK COMPOSITE */
+  .gh-composite {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .gh-meter {
+    height: 30px;
+    background: linear-gradient(90deg, var(--red) 0%, #4a1a2a 20%, #1a1a2e 50%, #1a2e1a 80%, var(--green) 100%);
+    border: 1px solid var(--border);
+    position: relative;
+    margin: 8px 0;
+    overflow: visible;
+  }
+
+  .gh-needle {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    width: 3px;
+    background: var(--amber);
+    box-shadow: 0 0 10px var(--amber);
+    transition: left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: translateX(-50%);
+  }
+
+  .gh-needle::before {
+    content: '▼';
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: var(--amber);
+  }
+
+  .gh-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+
+  .gh-score-display {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .gh-score-num {
+    font-family: var(--display);
+    font-size: 28px;
+    font-weight: 900;
+    transition: color 0.5s;
+  }
+
+  .gh-score-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+
+  /* SPAN HELPERS */
+  .bull { color: var(--green); }
+  .bear { color: var(--red); }
+  .neut { color: var(--amber); }
+  .blue { color: var(--blue); }
+  .dim  { color: var(--text-dim); }
+
+  /* SEPARATOR */
+  .sep { border-top: 1px solid var(--border); margin: 10px 0; }
+
+  /* COLUMN SPANS */
+  .col-span-2 { grid-column: span 2; }
+
+  /* FORMULA DISPLAY */
+  .formula-box {
+    background: rgba(0,0,0,0.6);
+    border-left: 2px solid var(--blue-dim);
+    padding: 8px 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    line-height: 1.8;
+  }
+
+  /* ALIGNMENT GAUGE */
+  .align-gauge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0;
+  }
+
+  .align-arc {
+    position: relative;
+    width: 140px;
+    height: 70px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+
+  .align-num {
+    font-family: var(--display);
+    font-size: 24px;
+    font-weight: 900;
+    text-align: center;
+    transition: color 0.5s;
+    line-height: 1;
+  }
+
+  .align-pct {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: center;
+    letter-spacing: 2px;
+  }
+
+  /* TABS */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.3); }
+
+  .tab {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 7px 12px;
+    cursor: pointer;
+    color: var(--text-dim);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+  .tab:hover { color: var(--text); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* PULSE */
+  @keyframes pulse-glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse-glow 2s ease-in-out infinite;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  /* BOTTOM SPACER */
+  .spacer-bottom { height: 30px; }
+
+  .btn-calc {
+    width: 100%;
+    background: linear-gradient(135deg, #1a2a10, #0a1808);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: var(--display);
+    font-size: 11px;
+    letter-spacing: 3px;
+    padding: 9px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .btn-calc:hover {
+    background: linear-gradient(135deg, #2a4020, #1a3010);
+    box-shadow: 0 0 15px rgba(0,229,160,0.2);
+    border-color: var(--green);
+  }
+
+  .btn-reset {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .btn-reset:hover { border-color: var(--text-dim); color: var(--text); }
+
+  select {
+    background: rgba(10,20,40,0.9);
+    border: 1px solid var(--border);
+    color: var(--text-bright);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 8px;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  .full-width { width: 100%; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* EV ROW */
+  .ev-display {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--border);
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  .ev-formula {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .ev-result {
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 700;
+    transition: color 0.5s;
+  }
+
+  @media (max-width: 900px) {
+    .desk { grid-template-columns: 1fr; }
+    .col-span-2 { grid-column: span 1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-block">
+      <div class="logo-main">1232 GLASSHOOK</div>
+      <div class="logo-sub">Quant Analysis Desk · v2.6 · <span class="live-dot"></span> LIVE</div>
+    </div>
+    <div class="ticker-zone">
+      <span class="ticker-label">INSTRUMENT</span>
+      <input type="text" class="ticker-input" id="tickerInput" value="ES" placeholder="TICKER" maxlength="10">
+      <span class="ticker-label">ACCOUNT $</span>
+      <input type="number" id="accountSize" class="account-input" value="100000" placeholder="100000">
+      <span class="ticker-label">RISK %</span>
+      <input type="number" id="riskPct" style="width:55px" value="1.5" step="0.1" min="0.1" max="3">
+    </div>
+    <div class="header-status">
+      <div class="clock" id="clockDisplay">--:--:-- EST</div>
+      <div class="session-badge" id="sessionBadge" style="color: var(--amber); border-color: var(--amber-dim);">PRE-MARKET</div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN DESK -->
+<div class="desk">
+
+  <!-- COLUMN 1: GLASSHOOK PROTOCOL INPUT -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-num">STEP 1-2</span>
+      <span class="panel-title">GLASSHOOK PROTOCOL</span>
+    </div>
+    <div class="panel-body">
+
+      <!-- GLOBAL SPILLOVER -->
+      <div class="field-group">
+        <div class="field-label">Global Spillover · L-7 Macro</div>
+
+        <div style="margin-bottom:6px">
+          <div class="index-row">
+            <span class="index-name">🇯🇵 Nikkei</span>
+            <input type="number" id="nikkei" class="idx-input" value="0.8" step="0.01" placeholder="%Δ">
+            <div class="signal-dot" id="dot-nikkei"></div>
+          </div>
+          <div class="index-row">
+            <span class="index-name">🇭🇰 HSI</span>
+            <input type="number" id="hsi" class="idx-input" value="0.6" step="0.01" placeholder="%Δ">
+            <div class="signal-dot" id="dot-hsi"></div>
+          </div>
+          <div class="index-row">
+            <span class="index-name">🇩🇪 DAX</span>
+            <input type="number" id="dax" class="idx-input" value="-0.3" step="0.01" placeholder="%Δ">
+            <div class="signal-dot" id="dot-dax"></div>
+          </div>
+          <div class="index-row">
+            <span class="index-name">🇬🇧 FTSE</span>
+            <input type="number" id="ftse" class="idx-input" value="0.2" step="0.01" placeholder="%Δ">
+            <div class="signal-dot" id="dot-ftse"></div>
+          </div>
+        </div>
+        <div class="formula-box" id="macro-formula">MACRO_SCORE = Σ weighted_index_signals</div>
+      </div>
+
+      <!-- FUTURES MOMENTUM -->
+      <div class="field-group">
+        <div class="field-label">Futures Momentum · Inst. Intent</div>
+
+        <div class="candle-row" style="grid-template-columns:1fr 1fr">
+          <div>
+            <div class="field-mini-label">Current Price</div>
+            <input type="number" id="currentPrice" class="full-width" value="5820" step="0.25">
+          </div>
+          <div>
+            <div class="field-mini-label">VWAP (Pre-Mkt)</div>
+            <input type="number" id="vwap" class="full-width" value="5805" step="0.25">
+          </div>
+        </div>
+
+        <div class="candle-row" style="grid-template-columns:1fr 1fr">
+          <div>
+            <div class="field-mini-label">LWMA-31 Value</div>
+            <input type="number" id="lwma31" class="full-width" value="5795" step="0.25">
+          </div>
+          <div>
+            <div class="field-mini-label">LWMA Slope</div>
+            <select id="lwmaSlope">
+              <option value="1">↑ Positive</option>
+              <option value="0">→ Flat</option>
+              <option value="-1">↓ Negative</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="candle-row" style="grid-template-columns:1fr 1fr">
+          <div>
+            <div class="field-mini-label">RSI (14)</div>
+            <input type="number" id="rsi" class="full-width" value="58" step="0.5" min="0" max="100">
+          </div>
+          <div>
+            <div class="field-mini-label">Prev. Close</div>
+            <input type="number" id="prevClose" class="full-width" value="5790" step="0.25">
+          </div>
+        </div>
+      </div>
+
+      <!-- CANDLE STRUCTURE (RVI) -->
+      <div class="field-group">
+        <div class="field-label">Session Candles (RVI Input)</div>
+        <div class="candle-row">
+          <div>
+            <div class="field-mini-label">Open</div>
+            <input type="number" id="candleOpen" class="full-width" value="5808" step="0.25">
+          </div>
+          <div>
+            <div class="field-mini-label">High</div>
+            <input type="number" id="candleHigh" class="full-width" value="5835" step="0.25">
+          </div>
+          <div>
+            <div class="field-mini-label">Low</div>
+            <input type="number" id="candleLow" class="full-width" value="5800" step="0.25">
+          </div>
+          <div>
+            <div class="field-mini-label">Close</div>
+            <input type="number" id="candleClose" class="full-width" value="5825" step="0.25">
+          </div>
+        </div>
+      </div>
+
+      <!-- CONVICTION INPUTS -->
+      <div class="field-group">
+        <div class="field-label">1232 Conviction Layers</div>
+
+        <div style="margin-bottom:8px;">
+          <div class="field-mini-label">SMA-200 Position</div>
+          <select id="sma200pos">
+            <option value="1">Price ABOVE SMA-200 (+1.0)</option>
+            <option value="-1">Price BELOW SMA-200 (−1.0)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:8px;">
+          <div class="field-mini-label">SMA-50 vs SMA-200</div>
+          <select id="sma50pos">
+            <option value="1">SMA-50 ABOVE SMA-200 (+1.0)</option>
+            <option value="-1">SMA-50 BELOW SMA-200 (−1.0)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:8px;">
+          <div class="field-mini-label">SMA-20 Position</div>
+          <select id="sma20pos">
+            <option value="1">Price ABOVE SMA-20 (+1.0)</option>
+            <option value="-1">Price BELOW SMA-20 (−1.0)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:8px;">
+          <div class="field-mini-label">Daily Trend</div>
+          <select id="dailyTrend">
+            <option value="1">Bullish (Uptrend)</option>
+            <option value="0">Sideways (Choppy)</option>
+            <option value="-1">Bearish (Downtrend)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:8px;">
+          <div class="field-mini-label">Volatility Regime (vs 20d avg)</div>
+          <select id="volRegime">
+            <option value="0.5">LOW (Compression < 25th pct)</option>
+            <option value="1.0" selected>NORMAL (25-75th pct)</option>
+            <option value="1.5">ELEVATED (75-85th pct)</option>
+            <option value="2.0">EXTREME (> 85th pct)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:8px;">
+          <div class="field-mini-label">Volume vs Average</div>
+          <select id="volumeSignal">
+            <option value="1">SURGE (> 150% avg vol)</option>
+            <option value="0.5" selected>NORMAL (80-150%)</option>
+            <option value="-0.5">DRY (< 80% avg vol)</option>
+          </select>
+        </div>
+
+      </div>
+
+      <button class="btn-calc" id="calcBtn" onclick="calculate()">⟳ COMPUTE ALL SCORES</button>
+      <button class="btn-reset" onclick="resetDefaults()">RESET DEFAULTS</button>
+
+    </div>
+  </div>
+
+  <!-- COLUMN 2: ANALYSIS ENGINE -->
+  <div class="panel col-span-2" style="grid-column: 2; grid-row: 1 / 3; display:flex; flex-direction:column;">
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('glasshook-tab', this)">GLASSHOOK SCORE</div>
+      <div class="tab" onclick="switchTab('conviction-tab', this)">CONVICTION VECTOR</div>
+      <div class="tab" onclick="switchTab('matrix-tab', this)">1232 MATRIX</div>
+      <div class="tab" onclick="switchTab('friction-tab', this)">FRICTION ENGINE</div>
+      <div class="tab" onclick="switchTab('position-tab', this)">POSITION CALC</div>
+    </div>
+
+    <!-- TAB: GLASSHOOK SCORE -->
+    <div id="glasshook-tab" class="tab-content active panel-body">
+      <div class="field-label" style="margin-bottom:14px;">GLASSHOOK COMPOSITE BIAS SCORE · RANGE [−100, +100]</div>
+
+      <div class="gh-composite">
+        <div class="gh-score-display">
+          <span class="gh-score-num" id="ghScoreNum">—</span>
+          <span class="gh-score-label">GH SCORE</span>
+        </div>
+        <div class="gh-meter">
+          <div class="gh-needle" id="ghNeedle" style="left:50%"></div>
+        </div>
+        <div class="gh-labels">
+          <span class="bear">−100 STRONG BEAR</span>
+          <span class="dim">−50</span>
+          <span class="neut">0 NEUTRAL</span>
+          <span class="dim">+50</span>
+          <span class="bull">+100 STRONG BULL</span>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; margin-bottom:14px;">
+        <div>
+          <div class="field-label" style="font-size:9px;">Futures Momentum (×0.40)</div>
+          <div class="score-bar-wrap">
+            <div class="score-bar-fill" id="bar-futures" style="width:50%;background:var(--amber)"></div>
+            <div class="score-bar-label">
+              <span style="font-size:9px">FUT</span>
+              <span id="lbl-futures">—</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="field-label" style="font-size:9px;">Global Spillover (×0.30)</div>
+          <div class="score-bar-wrap">
+            <div class="score-bar-fill" id="bar-global" style="width:50%;background:var(--amber)"></div>
+            <div class="score-bar-label">
+              <span style="font-size:9px">MAC</span>
+              <span id="lbl-global">—</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="field-label" style="font-size:9px;">Options Flow est. (×0.20)</div>
+          <div class="score-bar-wrap">
+            <div class="score-bar-fill" id="bar-options" style="width:50%;background:var(--amber)"></div>
+            <div class="score-bar-label">
+              <span style="font-size:9px">OPT</span>
+              <span id="lbl-options">—</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="field-label" style="font-size:9px;">Economic Impact (×0.10)</div>
+          <div class="score-bar-wrap">
+            <div class="score-bar-fill" id="bar-econ" style="width:50%;background:var(--amber)"></div>
+            <div class="score-bar-label">
+              <span style="font-size:9px">ECO</span>
+              <span id="lbl-econ">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="formula-box" id="gh-formula-display">
+        GLASSHOOK_BIAS = (0.40 × FUT_MOMENTUM) + (0.30 × GLOBAL_SPILLOVER) + (0.20 × OPTIONS_FLOW) + (0.10 × ECONOMIC_IMPACT)<br>
+        Accuracy: 62-68% directional accuracy for intraday trend
+      </div>
+
+      <!-- CHASING THE GAP WARNING -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+        <div class="stat-cell">
+          <div class="stat-label">Gap from Close</div>
+          <div class="stat-val" id="gapPct">—<span class="stat-unit">%</span></div>
+        </div>
+        <div class="stat-cell" id="gapWarningCell">
+          <div class="stat-label">Gap Status</div>
+          <div class="stat-val" id="gapWarning" style="font-size:12px">—</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Price vs VWAP</div>
+          <div class="stat-val" id="priceVwap">—</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">RSI Signal</div>
+          <div class="stat-val" id="rsiSignal" style="font-size:13px">—</div>
+        </div>
+      </div>
+
+      <!-- HOOK OR TRAP -->
+      <div class="stat-cell" style="text-align:center; padding:14px;">
+        <div class="stat-label" style="margin-bottom:6px;">FUTURES PATTERN DETECTION</div>
+        <div style="font-family:var(--display); font-size:20px; letter-spacing:4px;" id="hookTrap">—</div>
+        <div style="font-family:var(--mono); font-size:10px; color:var(--text-dim); margin-top:4px;" id="hookTrapDesc">Enter values to analyze</div>
+      </div>
+    </div>
+
+    <!-- TAB: CONVICTION VECTOR -->
+    <div id="conviction-tab" class="tab-content panel-body">
+      <div class="field-label" style="margin-bottom:14px;">MULTI-TIMEFRAME CONVICTION VECTOR · COMPOSITE SCORE ∈ [−1, +1]</div>
+
+      <div class="formula-box">
+        CONVICTION_VECTOR = [C_macro, C_daily, C_intraday]<br>
+        COMPOSITE_CONVICTION = (0.40×OFI) + (0.30×PC) + (0.20×VR_norm) + (0.10×RAI_norm)<br>
+        ConsciousnessScore = (0.50×SMA200) + (0.30×SMA50_cross) + (0.20×SMA20)
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <div class="cvec-row" style="border-bottom:1px solid var(--border); padding-bottom:6px; margin-bottom:8px;">
+          <div class="cvec-label" style="color:var(--text)">TIMEFRAME</div>
+          <div style="font-family:var(--mono); font-size:9px; color:var(--text-dim); text-align:center;">BEAR ←————→ BULL</div>
+          <div class="cvec-label" style="color:var(--text); text-align:right">Cᵢ</div>
+        </div>
+
+        <div class="cvec-row">
+          <span class="cvec-label">MACRO (L7)</span>
+          <div class="cvec-track">
+            <div class="cvec-fill" id="cv-macro"></div>
+          </div>
+          <span class="cvec-val" id="cv-macro-val">—</span>
+        </div>
+        <div class="cvec-row">
+          <span class="cvec-label">WEEKLY</span>
+          <div class="cvec-track">
+            <div class="cvec-fill" id="cv-weekly"></div>
+          </div>
+          <span class="cvec-val" id="cv-weekly-val">—</span>
+        </div>
+        <div class="cvec-row">
+          <span class="cvec-label">DAILY (L4)</span>
+          <div class="cvec-track">
+            <div class="cvec-fill" id="cv-daily"></div>
+          </div>
+          <span class="cvec-val" id="cv-daily-val">—</span>
+        </div>
+        <div class="cvec-row">
+          <span class="cvec-label">HOURLY</span>
+          <div class="cvec-track">
+            <div class="cvec-fill" id="cv-hourly"></div>
+          </div>
+          <span class="cvec-val" id="cv-hourly-val">—</span>
+        </div>
+        <div class="cvec-row">
+          <span class="cvec-label">5-MIN (L2)</span>
+          <div class="cvec-track">
+            <div class="cvec-fill" id="cv-5min"></div>
+          </div>
+          <span class="cvec-val" id="cv-5min-val">—</span>
+        </div>
+        <div class="cvec-row">
+          <span class="cvec-label">1-MIN</span>
+          <div class="cvec-track">
+            <div class="cvec-fill" id="cv-1min"></div>
+          </div>
+          <span class="cvec-val" id="cv-1min-val">—</span>
+        </div>
+        <div class="cvec-row">
+          <span class="cvec-label">TICK</span>
+          <div class="cvec-track">
+            <div class="cvec-fill" id="cv-tick"></div>
+          </div>
+          <span class="cvec-val" id="cv-tick-val">—</span>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
+        <div class="stat-cell">
+          <div class="stat-label">Alignment Metric</div>
+          <div class="stat-val" id="alignMetric">—</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Win Probability</div>
+          <div class="stat-val" id="winProb">—<span class="stat-unit">%</span></div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Consciousness Score</div>
+          <div class="stat-val" id="consciousnessScore">—</div>
+        </div>
+      </div>
+
+      <div class="formula-box" id="align-formula">
+        P(Correct) ≈ 0.50 + (ALIGNMENT × 0.22)<br>
+        Alignment < 0.57 → SKIP TRADE (probability < 55%)
+      </div>
+
+      <!-- CONVICTION STATE MACHINE -->
+      <div class="field-label" style="margin-bottom:8px;">CONVICTION STATE MACHINE</div>
+      <div class="state-indicator" id="stateIndicator">
+        <div class="state-seg" id="seg-comp-1"></div>
+        <div class="state-seg" id="seg-comp-2"></div>
+        <div class="state-seg" id="seg-comp-3"></div>
+        <div class="state-seg" id="seg-disp-1"></div>
+        <div class="state-seg" id="seg-disp-2"></div>
+        <div class="state-seg" id="seg-disp-3"></div>
+        <div class="state-seg" id="seg-exh-1"></div>
+        <div class="state-seg" id="seg-exh-2"></div>
+        <div class="state-seg" id="seg-exh-3"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-family:var(--mono); font-size:9px; color:var(--text-dim); margin-bottom:10px;">
+        <span class="neut">COMPRESSION</span>
+        <span class="blue">DISPLACEMENT</span>
+        <span class="bear">EXHAUSTION</span>
+      </div>
+      <div class="stat-cell" style="text-align:center">
+        <div class="stat-label">CURRENT REGIME</div>
+        <div style="font-family:var(--display); font-size:18px; letter-spacing:3px;" id="regimeDisplay">—</div>
+        <div style="font-family:var(--mono); font-size:10px; color:var(--text-dim); margin-top:4px;" id="regimeDesc">—</div>
+      </div>
+    </div>
+
+    <!-- TAB: 1232 MATRIX -->
+    <div id="matrix-tab" class="tab-content panel-body">
+      <div class="field-label" style="margin-bottom:14px;">1232 ALIGNMENT MATRIX · ZETA SCORE SYSTEM</div>
+
+      <div class="formula-box">
+        ZETA SCORE: Zeta 3/3 = AGGRESSIVE | Zeta 2/3 = CONSERVATIVE | Zeta &lt;2/3 = NO TRADE<br>
+        P(Correct) ≈ 0.50 + (ALIGNMENT × 0.22) | Target Sharpe: 1.65–1.75
+      </div>
+
+      <!-- MATRIX TABLE -->
+      <div style="background:rgba(0,0,0,0.3); border:1px solid var(--border); padding:10px; margin-bottom:14px;">
+        <div class="matrix-row" style="border-bottom:2px solid var(--border-glow);">
+          <span class="matrix-layer" style="color:var(--text-dim); font-size:9px;">LAYER</span>
+          <span class="matrix-code" style="font-size:9px; color:var(--text-dim);">CODE</span>
+          <span class="matrix-name" style="color:var(--text-dim);">COMPONENT</span>
+          <span class="matrix-val" style="color:var(--text-dim); font-size:9px;">SCORE</span>
+          <span class="matrix-status" style="color:var(--text-dim); border-color:var(--border); font-size:8px;">STATE</span>
+        </div>
+        <div class="matrix-row">
+          <span class="matrix-layer">L-7</span>
+          <span class="matrix-code">MAC</span>
+          <span class="matrix-name">Glasshook Global Score</span>
+          <span class="matrix-val" id="mat-l7-val">—</span>
+          <span class="matrix-status" id="mat-l7-status" style="border-color:var(--text-dim)">—</span>
+        </div>
+        <div class="matrix-row">
+          <span class="matrix-layer">L-6</span>
+          <span class="matrix-code">CON</span>
+          <span class="matrix-name">Consciousness Score</span>
+          <span class="matrix-val" id="mat-l6-val">—</span>
+          <span class="matrix-status" id="mat-l6-status" style="border-color:var(--text-dim)">—</span>
+        </div>
+        <div class="matrix-row">
+          <span class="matrix-layer">L-4</span>
+          <span class="matrix-code">TRD</span>
+          <span class="matrix-name">Daily Trend Direction</span>
+          <span class="matrix-val" id="mat-l4-val">—</span>
+          <span class="matrix-status" id="mat-l4-status" style="border-color:var(--text-dim)">—</span>
+        </div>
+        <div class="matrix-row">
+          <span class="matrix-layer">L-3</span>
+          <span class="matrix-code">FUT</span>
+          <span class="matrix-name">Futures vs VWAP</span>
+          <span class="matrix-val" id="mat-l3-val">—</span>
+          <span class="matrix-status" id="mat-l3-status" style="border-color:var(--text-dim)">—</span>
+        </div>
+        <div class="matrix-row">
+          <span class="matrix-layer">L-2</span>
+          <span class="matrix-code">PRC</span>
+          <span class="matrix-name">5-Min Price vs LWMA-31</span>
+          <span class="matrix-val" id="mat-l2-val">—</span>
+          <span class="matrix-status" id="mat-l2-status" style="border-color:var(--text-dim)">—</span>
+        </div>
+        <div class="matrix-row">
+          <span class="matrix-layer">L-1</span>
+          <span class="matrix-code">MOM</span>
+          <span class="matrix-name">LWMA Slope Momentum</span>
+          <span class="matrix-val" id="mat-l1-val">—</span>
+          <span class="matrix-status" id="mat-l1-status" style="border-color:var(--text-dim)">—</span>
+        </div>
+        <div class="matrix-row" style="border-top:2px solid var(--border-glow); border-bottom:none; padding-top:8px; margin-top:4px;">
+          <span class="matrix-layer" style="color:var(--amber)">ZETA</span>
+          <span class="matrix-code" style="color:var(--amber)">SUM</span>
+          <span class="matrix-name" style="font-weight:700; color:var(--amber);">Total Alignment Score</span>
+          <span class="matrix-val" id="mat-zeta-val" style="color:var(--amber); font-size:16px;">—</span>
+          <span class="matrix-status" id="mat-zeta-status" style="border-color:var(--amber); color:var(--amber)">—</span>
+        </div>
+      </div>
+
+      <!-- ZETA RESULT -->
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin-bottom:12px">
+        <div class="stat-cell" style="text-align:center; border-color:var(--border);" id="zeta-cell-1">
+          <div class="stat-label">ZETA 3/3</div>
+          <div style="font-family:var(--display); font-size:13px; letter-spacing:2px;" id="zeta-3-label">—</div>
+          <div style="font-family:var(--mono); font-size:9px; color:var(--text-dim); margin-top:3px;">AGGRESSIVE ENTRY</div>
+        </div>
+        <div class="stat-cell" style="text-align:center;" id="zeta-cell-2">
+          <div class="stat-label">ZETA 2/3</div>
+          <div style="font-family:var(--display); font-size:13px; letter-spacing:2px;" id="zeta-2-label">—</div>
+          <div style="font-family:var(--mono); font-size:9px; color:var(--text-dim); margin-top:3px;">50% POSITION SIZE</div>
+        </div>
+        <div class="stat-cell" style="text-align:center;" id="zeta-cell-3">
+          <div class="stat-label">ZETA &lt;2/3</div>
+          <div style="font-family:var(--display); font-size:13px; letter-spacing:2px;" id="zeta-0-label">—</div>
+          <div style="font-family:var(--mono); font-size:9px; color:var(--text-dim); margin-top:3px;">NO TRADE ZONE</div>
+        </div>
+      </div>
+
+      <!-- ENTRY PRECISION SCORE -->
+      <div class="field-label" style="margin-bottom:8px;">ENTRY PRECISION SCORE (Layer 2 — LWMA ±2σ / Envelope)</div>
+      <div class="gh-composite" style="margin-bottom:12px;">
+        <div class="score-bar-wrap" style="height:24px;">
+          <div class="score-bar-fill" id="epsBar" style="width:50%;background:var(--amber);opacity:0.7;"></div>
+          <div class="score-bar-label">
+            <span style="font-size:10px;">ENTRY PRECISION</span>
+            <span id="epsVal" style="font-size:13px; font-family:var(--display);">—</span>
+          </div>
+        </div>
+        <div style="font-family:var(--mono); font-size:10px; color:var(--text-dim); margin-top:6px;" id="epsDesc">
+          1.0 = Strong entry signal | 0.5 = Fair value | 0.0 = Extended
+        </div>
+      </div>
+
+      <!-- RVI & LWSTDEV EXIT -->
+      <div class="field-label" style="margin-bottom:8px;">EXIT CONVICTION SIGNALS (Layer 2 Reversed)</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <div class="stat-cell">
+          <div class="stat-label">RVI Proxy</div>
+          <div class="stat-val" id="rviProxy">—</div>
+          <div style="font-family:var(--mono); font-size:9px; color:var(--text-dim); margin-top:3px;" id="rviSignal">—</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Vol Extreme Signal</div>
+          <div class="stat-val" id="volExtreme">—</div>
+          <div style="font-family:var(--mono); font-size:9px; color:var(--text-dim); margin-top:3px;" id="volExtremeDesc">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: FRICTION ENGINE -->
+    <div id="friction-tab" class="tab-content panel-body">
+      <div class="field-label" style="margin-bottom:14px;">MARKET FRICTION INDEX · INFORMATION PROCESSING LAG ANALYSIS</div>
+
+      <div class="formula-box">
+        FRICTION_INDEX(t) = Σ[|Price_Change_Unexplained| / Total_Price_Change] ∈ [0, 1]<br>
+        Exploitable when: FRICTION × INFO_SURPRISE × CONVICTION_ALIGNMENT > Threshold<br>
+        FRICTION = 0.3 (liquid LCap) | 0.5 (MidCap/Forex) | 0.7+ (Small/Crypto)
+      </div>
+
+      <div class="friction-display">
+        <div class="friction-cell">
+          <div class="friction-label">Friction Index</div>
+          <div class="friction-val" id="frictionIdx">—</div>
+        </div>
+        <div class="friction-cell">
+          <div class="friction-label">Info Surprise</div>
+          <div class="friction-val" id="infoSurprise">—</div>
+        </div>
+        <div class="friction-cell">
+          <div class="friction-label">Exploit Score</div>
+          <div class="friction-val" id="exploitScore">—</div>
+        </div>
+      </div>
+
+      <div class="field-label" style="margin-bottom:8px;">FRICTION POINTS DETECTED</div>
+      <div id="frictionPoints" style="font-family:var(--mono); font-size:11px; line-height:2; margin-bottom:14px;">—</div>
+
+      <div class="sep"></div>
+
+      <div class="field-label" style="margin-bottom:8px;">INFORMATION LAYER TIMING ANALYSIS</div>
+      <div style="display:grid; grid-template-columns:1fr; gap:6px; margin-bottom:14px;">
+        <div class="stat-cell">
+          <div class="stat-label">Layer 1 — Tick (α₁ ≈ 0.8–1.0)</div>
+          <div style="font-family:var(--mono); font-size:10px; color:var(--text-dim);">HFT noise zone · P(Direction|New_Info) ≈ 0.502</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Layer 2 — Intraday (α₂ ≈ 0.5–0.7)</div>
+          <div style="font-family:var(--mono); font-size:10px; color:var(--text-dim);">Day trader signal · P(Direction|Mid_Info) ≈ 0.62+</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Layer 3 — Positional (α₃ ≈ 0.2–0.4)</div>
+          <div style="font-family:var(--mono); font-size:10px; color:var(--text-dim);">Institutional conviction · P(Direction|Old_Info) ≈ 0.625+</div>
+        </div>
+      </div>
+
+      <div class="field-label" style="margin-bottom:8px;">ALPHA GENERATION COMPONENTS</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:12px;">
+        <div class="friction-cell">
+          <div class="friction-label">Info Lag Alpha</div>
+          <div class="friction-val" id="alphaInfoLag" style="font-size:14px; color:var(--blue)">+2-3%</div>
+        </div>
+        <div class="friction-cell">
+          <div class="friction-label">Conviction Div.</div>
+          <div class="friction-val" id="alphaConvDiv" style="font-size:14px; color:var(--blue)">+8-12%</div>
+        </div>
+        <div class="friction-cell">
+          <div class="friction-label">Regime ID</div>
+          <div class="friction-val" id="alphaRegime" style="font-size:14px; color:var(--blue)">+15-20%</div>
+        </div>
+      </div>
+
+      <div class="ev-display">
+        <div class="ev-formula">EV = (Pw × Rw) − (Pl × Rl) · Expected Value per trade at current conviction:</div>
+        <div style="display:flex; align-items:baseline; gap:6px;">
+          <div class="ev-result" id="evResult">—</div>
+          <div style="font-family:var(--mono); font-size:10px; color:var(--text-dim);">per unit risk</div>
+        </div>
+        <div style="font-family:var(--mono); font-size:10px; color:var(--text-dim); margin-top:4px;" id="evBreakdown">—</div>
+      </div>
+    </div>
+
+    <!-- TAB: POSITION CALC -->
+    <div id="position-tab" class="tab-content panel-body">
+      <div class="field-label" style="margin-bottom:14px;">POSITION SIZING · KELLY DERIVATIVE + CONVICTION SCALING</div>
+
+      <div class="formula-box">
+        Position_Size = (Account × Risk%) / Stop_Loss_Distance<br>
+        Kelly_Fraction = [Pw×Rw − Pl×Rl] / Rw<br>
+        Conviction > 0.75 → Full size | 0.60-0.75 → 1.5% | 0.50-0.60 → 1% | &lt;0.50 → SKIP
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+        <div>
+          <div class="field-mini-label">Entry Price</div>
+          <input type="number" id="entryPrice" class="full-width" value="5820" step="0.25">
+        </div>
+        <div>
+          <div class="field-mini-label">Stop Loss Price</div>
+          <input type="number" id="stopPrice" class="full-width" value="5761" step="0.25">
+        </div>
+        <div>
+          <div class="field-mini-label">Target 1 (50%)</div>
+          <input type="number" id="target1" class="full-width" value="5878" step="0.25">
+        </div>
+        <div>
+          <div class="field-mini-label">Target 2 (30%)</div>
+          <input type="number" id="target2" class="full-width" value="5936" step="0.25">
+        </div>
+        <div>
+          <div class="field-mini-label">Target 3 (20%)</div>
+          <input type="number" id="target3" class="full-width" value="5994" step="0.25">
+        </div>
+        <div>
+          <div class="field-mini-label">Asset Type</div>
+          <select id="assetType">
+            <option value="equity">Equity / ETF</option>
+            <option value="futures">Futures (/ES, /NQ)</option>
+            <option value="forex">Forex Pair</option>
+            <option value="crypto">Crypto</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pos-calc" id="posCalcResults">
+        <div class="pos-row"><span class="pos-key">Max Risk ($)</span><span class="pos-val" id="pc-maxrisk">—</span></div>
+        <div class="pos-row"><span class="pos-key">Conviction-Adj. Risk ($)</span><span class="pos-val" id="pc-adjrisk">—</span></div>
+        <div class="pos-row"><span class="pos-key">Stop Distance</span><span class="pos-val" id="pc-stopdist">—</span></div>
+        <div class="pos-row"><span class="pos-key">Position Size (units)</span><span class="pos-val" id="pc-units">—</span></div>
+        <div class="pos-row"><span class="pos-key">Reward : Risk (T1)</span><span class="pos-val" id="pc-rr1">—</span></div>
+        <div class="pos-row"><span class="pos-key">Reward : Risk (T2)</span><span class="pos-val" id="pc-rr2">—</span></div>
+        <div class="pos-row"><span class="pos-key">Reward : Risk (T3)</span><span class="pos-val" id="pc-rr3">—</span></div>
+        <div class="pos-row"><span class="pos-key">Weighted Avg R:R</span><span class="pos-val" id="pc-avgrr">—</span></div>
+        <div class="pos-row"><span class="pos-key">Expected Value ($)</span><span class="pos-val" id="pc-ev">—</span></div>
+        <div class="pos-row"><span class="pos-key">Sharpe Contribution</span><span class="pos-val" id="pc-sharpe">—</span></div>
+      </div>
+
+      <!-- SCALE OUT PLAN -->
+      <div class="field-label" style="margin-bottom:8px;">PROFIT EXTRACTION SCHEDULE</div>
+      <div id="scaleOutPlan" style="font-family:var(--mono); font-size:11px; line-height:2; margin-bottom:12px; background:rgba(0,0,0,0.4); border:1px solid var(--border); padding:10px;">—</div>
+
+      <!-- KELLY FRACTION -->
+      <div class="stat-cell" style="margin-bottom:10px;">
+        <div class="stat-label">Kelly Fraction (Full Kelly — use 25-50% in practice)</div>
+        <div class="stat-val" id="kellyFraction">—</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- COLUMN 3: VERDICT + OUTPUT -->
+  <div class="panel" style="grid-column:3; grid-row:1/3;">
+    <div class="panel-header">
+      <span class="panel-num">OUTPUT</span>
+      <span class="panel-title">VERDICT &amp; METRICS</span>
+    </div>
+    <div class="panel-body">
+
+      <!-- VERDICT -->
+      <div class="verdict-box no-trade" id="verdictBox">
+        <div class="verdict-main dim" id="verdictMain">AWAITING</div>
+        <div class="verdict-sub" id="verdictSub">INPUT DATA TO ANALYZE</div>
+      </div>
+
+      <!-- ZETA & SHARPE -->
+      <div class="stat-grid">
+        <div class="stat-cell">
+          <div class="stat-label">ZETA Score</div>
+          <div class="stat-val" id="zetaScore">—<span class="stat-unit">/6</span></div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Sharpe Target</div>
+          <div class="stat-val" style="color:var(--blue)">1.65<span class="stat-unit">-1.75</span></div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">GH Score</div>
+          <div class="stat-val" id="ghScoreSmall">—</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Alignment</div>
+          <div class="stat-val" id="alignSmall">—<span class="stat-unit">/7</span></div>
+        </div>
+      </div>
+
+      <!-- SCORE BARS -->
+      <div style="margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; font-family:var(--mono); font-size:9px; color:var(--text-dim); margin-bottom:4px;">
+          <span>MACRO BIAS</span><span id="macroBarLbl">—</span>
+        </div>
+        <div class="score-bar-wrap">
+          <div class="score-bar-fill" id="macroBar" style="width:50%"></div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; font-family:var(--mono); font-size:9px; color:var(--text-dim); margin-bottom:4px; margin-top:6px;">
+          <span>MICRO CONVICTION</span><span id="microBarLbl">—</span>
+        </div>
+        <div class="score-bar-wrap">
+          <div class="score-bar-fill" id="microBar" style="width:50%"></div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; font-family:var(--mono); font-size:9px; color:var(--text-dim); margin-bottom:4px; margin-top:6px;">
+          <span>OVERALL STRENGTH</span><span id="strengthBarLbl">—</span>
+        </div>
+        <div class="score-bar-wrap" style="height:24px;">
+          <div class="score-bar-fill" id="strengthBar" style="width:50%"></div>
+          <div class="score-bar-label" style="font-size:11px;">
+            <span>CONVICTION</span>
+            <span id="strengthBarVal">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- WIN PROBABILITY DISPLAY -->
+      <div class="align-gauge">
+        <div class="align-num" id="winProbGauge">—</div>
+        <div class="align-pct">WIN PROBABILITY</div>
+      </div>
+
+      <div class="sep"></div>
+
+      <!-- DAILY REFLECTION CHECKLIST -->
+      <div class="field-label" style="margin-bottom:8px;">1232 PRE-TRADE CHECKLIST</div>
+
+      <div id="checklist">
+        <div class="check-item" id="chk-gap"><span class="check-icon">○</span>Gap check ≤ 1.5%</div>
+        <div class="check-item" id="chk-vwap"><span class="check-icon">○</span>Price / VWAP aligned</div>
+        <div class="check-item" id="chk-lwma"><span class="check-icon">○</span>Price above/below LWMA</div>
+        <div class="check-item" id="chk-macro"><span class="check-icon">○</span>Macro conviction ≥ 50%</div>
+        <div class="check-item" id="chk-align"><span class="check-icon">○</span>Alignment ≥ 4/7 TFs</div>
+        <div class="check-item" id="chk-rr"><span class="check-icon">○</span>Min 2:1 reward-risk</div>
+        <div class="check-item" id="chk-regime"><span class="check-icon">○</span>Not in No-Trade Zone</div>
+      </div>
+
+      <div class="sep"></div>
+
+      <!-- MAX RISK SUMMARY -->
+      <div class="field-label" style="margin-bottom:8px;">RISK PARAMETERS</div>
+      <div class="pos-calc" style="padding:8px;">
+        <div class="pos-row"><span class="pos-key">Max Risk/Trade</span><span class="pos-val bear">&lt; 2% equity</span></div>
+        <div class="pos-row"><span class="pos-key">Max Daily Loss</span><span class="pos-val bear" id="maxDailyLoss">—</span></div>
+        <div class="pos-row"><span class="pos-key">Conviction Multiplier</span><span class="pos-val" id="convMultiplier">—</span></div>
+        <div class="pos-row"><span class="pos-key">Trade Classification</span><span class="pos-val" id="tradeClass">—</span></div>
+        <div class="pos-row"><span class="pos-key">Annual EV (est.)</span><span class="pos-val bull" id="annualEV">—</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM ROW: QUANT NOTES -->
+  <div class="panel" style="grid-column:1/4;">
+    <div class="panel-header">
+      <span class="panel-num">NOTES</span>
+      <span class="panel-title">QUANT MATH SUMMARY · ACADEMIC SERIES 1232</span>
+    </div>
+    <div class="panel-body" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:12px;">
+      <div>
+        <div class="formula-box" style="font-size:9px; line-height:1.9;">
+          <span style="color:var(--amber)">FRICTION THEOREM</span><br>
+          FRICTION = |P(t) − P_theoretical(t)|<br>
+          α₁(Tick) ≈ 0.8–1.0 HIGH<br>
+          α₂(Intraday) ≈ 0.5–0.7 MOD<br>
+          α₃(Positional) ≈ 0.2–0.4 LOW
+        </div>
+      </div>
+      <div>
+        <div class="formula-box" style="font-size:9px; line-height:1.9;">
+          <span style="color:var(--amber)">CONVICTION COMPOSITE</span><br>
+          = 0.40×OFI + 0.30×PC<br>
+          + 0.20×VR_norm + 0.10×RAI<br>
+          OFI = (Buy_Vol − Sell_Vol)/Total<br>
+          VR = σ_now / σ_20d_avg
+        </div>
+      </div>
+      <div>
+        <div class="formula-box" style="font-size:9px; line-height:1.9;">
+          <span style="color:var(--amber)">LWMA-31 ENTRY</span><br>
+          LWMA = Σ(i/496 × Price(t-i))<br>
+          σ = √[Σ(P−LWMA)²/31]<br>
+          Upper = LWMA + 2σ → SHORT<br>
+          Lower = LWMA − 2σ → LONG
+        </div>
+      </div>
+      <div>
+        <div class="formula-box" style="font-size:9px; line-height:1.9;">
+          <span style="color:var(--amber)">PROFIT EXTRACTION</span><br>
+          EV = Pw×Rw − (1−Pw)×Rl<br>
+          T1 (50%): Entry ± 2-3%<br>
+          T2 (30%): Entry ± 5-8%<br>
+          T3 (20%): Entry ± 10-15%
+        </div>
+      </div>
+      <div>
+        <div class="formula-box" style="font-size:9px; line-height:1.9;">
+          <span style="color:var(--amber)">ALPHA GENERATION</span><br>
+          Info lag: +2-3% annual<br>
+          Conv. divergence: +8-12%<br>
+          Regime ID: +15-20%<br>
+          Total: 25-35% α (pre-adj.)
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TAPE -->
+<div class="tape">
+  <div class="tape-inner" id="tapeInner">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+<div class="spacer-bottom"></div>
+
+<!-- SCRIPTS -->
+<script>
+// ═══════════════════════════════════════════════════════════
+// CLOCK & SESSION
+// ═══════════════════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const est = new Date(utc - 5 * 3600000);
+  const hh = String(est.getHours()).padStart(2,'0');
+  const mm = String(est.getMinutes()).padStart(2,'0');
+  const ss = String(est.getSeconds()).padStart(2,'0');
+  document.getElementById('clockDisplay').textContent = `${hh}:${mm}:${ss} EST`;
+  const h = est.getHours(), m = est.getMinutes();
+  const total = h * 60 + m;
+  let session = '', color = 'var(--amber)', borderColor = 'var(--amber-dim)';
+  if      (total < 240)  { session = 'CLOSED'; color = 'var(--text-dim)'; }
+  else if (total < 570)  { session = 'PRE-MARKET'; color = 'var(--amber)'; }
+  else if (total < 960)  { session = 'REGULAR SESSION'; color = 'var(--green)'; borderColor = 'var(--green-dim)'; }
+  else if (total < 1200) { session = 'AFTER-HOURS'; color = 'var(--blue)'; borderColor = 'var(--blue-dim)'; }
+  else                   { session = 'CLOSED'; color = 'var(--text-dim)'; }
+  const badge = document.getElementById('sessionBadge');
+  badge.textContent = session;
+  badge.style.color = color;
+  badge.style.borderColor = borderColor;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ═══════════════════════════════════════════════════════════
+// TICKER TAPE
+// ═══════════════════════════════════════════════════════════
+const TAPE_DATA = [
+  {sym:'ES', val:5820, chg:'+12.5', pct:'+0.22%', cls:'up'},
+  {sym:'NQ', val:20450, chg:'+38.0', pct:'+0.19%', cls:'up'},
+  {sym:'YM', val:43200, chg:'-55.0', pct:'-0.13%', cls:'dn'},
+  {sym:'RTY', val:2145, chg:'+8.2', pct:'+0.38%', cls:'up'},
+  {sym:'VIX', val:18.4, chg:'-0.65', pct:'-3.41%', cls:'dn'},
+  {sym:'GC', val:2685, chg:'+4.5', pct:'+0.17%', cls:'up'},
+  {sym:'CL', val:71.3, chg:'-0.8', pct:'-1.11%', cls:'dn'},
+  {sym:'DXY', val:104.2, chg:'+0.1', pct:'+0.10%', cls:'up'},
+  {sym:'ZN', val:111.4, chg:'-0.2', pct:'-0.18%', cls:'dn'},
+  {sym:'BTC', val:88500, chg:'+350', pct:'+0.40%', cls:'up'},
+  {sym:'NIKKEI', val:38820, chg:'+310', pct:'+0.80%', cls:'up'},
+  {sym:'DAX', val:22150, chg:'-66', pct:'-0.30%', cls:'dn'},
+  {sym:'HSI', val:23450, chg:'+140', pct:'+0.60%', cls:'up'},
+  {sym:'FTSE', val:8450, chg:'+17', pct:'+0.20%', cls:'up'},
+];
+
+function buildTape() {
+  const data = [...TAPE_DATA, ...TAPE_DATA]; // doubled for infinite scroll
+  const html = data.map(d => {
+    const c = d.cls === 'up' ? 'up' : d.cls === 'dn' ? 'dn' : 'nl';
+    return `<span class="tape-item"><span class="sym">${d.sym}</span><span class="${c}">${d.val} <small>${d.chg} (${d.pct})</small></span></span>`;
+  }).join('');
+  document.getElementById('tapeInner').innerHTML = html;
+}
+buildTape();
+
+// ═══════════════════════════════════════════════════════════
+// TAB SWITCHER
+// ═══════════════════════════════════════════════════════════
+function switchTab(id, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+const g = id => document.getElementById(id);
+
+function setColor(el, val, neutralZone = 0) {
+  if (typeof val === 'number') {
+    if (val > neutralZone) el.style.color = 'var(--green)';
+    else if (val < -neutralZone) el.style.color = 'var(--red)';
+    else el.style.color = 'var(--amber)';
+  }
+}
+
+function setBar(barId, value, range = 100) {
+  // value ∈ [-range, +range] → width + color
+  const pct = ((value + range) / (2 * range)) * 100;
+  const bar = g(barId);
+  bar.style.width = Math.max(2, Math.min(98, pct)) + '%';
+  if (value > range * 0.1) bar.style.background = 'var(--green)';
+  else if (value < -range * 0.1) bar.style.background = 'var(--red)';
+  else bar.style.background = 'var(--amber)';
+}
+
+function statusBadge(el, val, threshold = 0) {
+  if (val > threshold) {
+    el.textContent = 'BULL';
+    el.style.color = 'var(--green)';
+    el.style.borderColor = 'var(--green-dim)';
+  } else if (val < -threshold) {
+    el.textContent = 'BEAR';
+    el.style.color = 'var(--red)';
+    el.style.borderColor = 'var(--red-dim)';
+  } else {
+    el.textContent = 'NEUT';
+    el.style.color = 'var(--amber)';
+    el.style.borderColor = 'var(--amber-dim)';
+  }
+}
+
+function setDot(id, val) {
+  const dot = g(id);
+  dot.className = 'signal-dot';
+  if (val > 0.5)       dot.classList.add('bull');
+  else if (val < -0.5) dot.classList.add('bear');
+  else                 dot.classList.add('neut');
+}
+
+function fmt(n, dec=2) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return (n >= 0 ? '+' : '') + n.toFixed(dec);
+}
+
+function fmtUSD(n) {
+  return '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits: 0});
+}
+
+function setCheck(id, state) {
+  const el = g(id);
+  el.className = 'check-item ' + state;
+  const icon = state === 'pass' ? '✔' : state === 'fail' ? '✘' : '⚠';
+  el.querySelector('.check-icon').textContent = icon;
+}
+
+function setCvecBar(id, val) {
+  // val ∈ [-1, +1], bar centered
+  const pct = ((val + 1) / 2) * 100;
+  const fill = g(id);
+  if (val >= 0) {
+    fill.style.left = '50%';
+    fill.style.width = (pct - 50) + '%';
+    fill.style.background = 'var(--green)';
+  } else {
+    fill.style.left = pct + '%';
+    fill.style.width = (50 - pct) + '%';
+    fill.style.background = 'var(--red)';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// CORE CALCULATION ENGINE
+// ═══════════════════════════════════════════════════════════
+function calculate() {
+  // ── INPUTS ──────────────────────────────────────────────
+  const ticker      = g('tickerInput').value.toUpperCase() || 'INSTRUMENT';
+  const account     = parseFloat(g('accountSize').value) || 100000;
+  const riskPctIn   = parseFloat(g('riskPct').value) || 1.5;
+
+  const nikkei      = parseFloat(g('nikkei').value)  || 0;
+  const hsi         = parseFloat(g('hsi').value)     || 0;
+  const dax         = parseFloat(g('dax').value)     || 0;
+  const ftse        = parseFloat(g('ftse').value)    || 0;
+
+  const price       = parseFloat(g('currentPrice').value) || 5820;
+  const vwap        = parseFloat(g('vwap').value)    || 5800;
+  const lwma31      = parseFloat(g('lwma31').value)  || 5790;
+  const lwmaSlope   = parseInt(g('lwmaSlope').value) || 0;
+  const rsi         = parseFloat(g('rsi').value)     || 50;
+  const prevClose   = parseFloat(g('prevClose').value) || price;
+
+  const cOpen       = parseFloat(g('candleOpen').value)  || price;
+  const cHigh       = parseFloat(g('candleHigh').value)  || price;
+  const cLow        = parseFloat(g('candleLow').value)   || price;
+  const cClose      = parseFloat(g('candleClose').value) || price;
+
+  const sma200pos   = parseInt(g('sma200pos').value) || 1;
+  const sma50pos    = parseInt(g('sma50pos').value)  || 1;
+  const sma20pos    = parseInt(g('sma20pos').value)  || 1;
+  const dailyTrend  = parseInt(g('dailyTrend').value) || 0;
+  const volRegime   = parseFloat(g('volRegime').value) || 1.0;
+  const volumeSig   = parseFloat(g('volumeSignal').value) || 0.5;
+
+  const entryPrice  = parseFloat(g('entryPrice').value)  || price;
+  const stopPrice   = parseFloat(g('stopPrice').value)   || price * 0.99;
+  const target1     = parseFloat(g('target1').value);
+  const target2     = parseFloat(g('target2').value);
+  const target3     = parseFloat(g('target3').value);
+
+  // ── STEP 1: GLOBAL SPILLOVER ──────────────────────────────
+  const idxVals = {nikkei, hsi, dax, ftse};
+  ['nikkei','hsi','dax','ftse'].forEach(k => setDot('dot-'+k, idxVals[k]));
+
+  const asia_signals  = [nikkei, hsi];
+  const euro_signals  = [dax, ftse];
+  const asia_bull     = asia_signals.filter(v=>v>0.5).length;
+  const asia_bear     = asia_signals.filter(v=>v<-0.5).length;
+  const euro_bull     = euro_signals.filter(v=>v>0.5).length;
+  const euro_bear     = euro_signals.filter(v=>v<-0.5).length;
+
+  const macro_raw = (nikkei + hsi + dax + ftse) / 4; // avg % change
+  // Normalize to [-100, +100]
+  const macroScore = Math.max(-100, Math.min(100, macro_raw * 30));
+
+  const asia_align  = (asia_bull === 2) ? 1 : (asia_bear === 2) ? -1 : 0;
+  const euro_align  = (euro_bull === 2) ? 1 : (euro_bear === 2) ? -1 : 0;
+  const isHighConvMacro = asia_align === euro_align && asia_align !== 0;
+  const isLowConvMacro  = asia_align !== euro_align;
+
+  g('macro-formula').innerHTML =
+    `MACRO: Asia=${asia_align>0?'🟢BULL':asia_align<0?'🔴BEAR':'⚪MIXED'} Euro=${euro_align>0?'🟢BULL':euro_align<0?'🔴BEAR':'⚪MIXED'} → ${isHighConvMacro?'HIGH CONVICTION':'LOW CONVICTION (CHOP)'}`;
+
+  // ── STEP 2: FUTURES MOMENTUM ──────────────────────────────
+  const priceAboveVWAP = price > vwap;
+  const priceAboveLWMA = price > lwma31;
+  const gap_pct = ((price - prevClose) / prevClose) * 100;
+  const isChasing = Math.abs(gap_pct) > 1.5;
+
+  // RSI signal
+  const rsi_oversold  = rsi < 30;
+  const rsi_overbought = rsi > 70;
+
+  // Futures momentum score ∈ [-100, +100]
+  let futScore = 0;
+  if (priceAboveVWAP) futScore += 40;
+  else futScore -= 40;
+  futScore += lwmaSlope * 30;
+  if (priceAboveLWMA) futScore += 30;
+  else futScore -= 30;
+  futScore = Math.max(-100, Math.min(100, futScore));
+
+  // Hook/Trap detection
+  const isHook = priceAboveVWAP && lwmaSlope > 0;
+  const isTrap = !priceAboveVWAP && rsi_oversold;
+  const isWhipsaw = !isHook && !isTrap && lwmaSlope === 0;
+
+  // ── GLASSHOOK COMPOSITE SCORE ──────────────────────────────
+  // GLASSHOOK_BIAS = 0.40×FUT + 0.30×GLOBAL + 0.20×OPTIONS + 0.10×ECONOMIC
+  // Options & Economic estimated from available inputs
+  const optionsEst = (rsi_overbought ? -40 : rsi_oversold ? 40 : (50 - rsi) * 0.8);
+  const econEst    = (volumeSig > 0 ? 30 : volumeSig < 0 ? -30 : 0);
+
+  const ghScore = 0.40 * futScore
+                + 0.30 * macroScore
+                + 0.20 * optionsEst
+                + 0.10 * econEst;
+
+  // ── CONSCIOUSNESS SCORE (Layer 1) ─────────────────────────
+  const consciousnessScore = 0.50 * sma200pos + 0.30 * sma50pos + 0.20 * sma20pos;
+
+  // ── CONVICTION VECTOR ──────────────────────────────────────
+  const C_macro   = Math.max(-1, Math.min(1, (macroScore/100) * 0.7 + consciousnessScore * 0.3));
+  const C_weekly  = consciousnessScore;
+  const C_daily   = dailyTrend * 0.8 + (sma20pos * 0.2);
+  const C_hourly  = Math.max(-1, Math.min(1, (priceAboveLWMA ? 0.5 : -0.5) + lwmaSlope * 0.3 + (priceAboveVWAP ? 0.2 : -0.2)));
+  const C_5min    = Math.max(-1, Math.min(1, (priceAboveVWAP ? 0.5 : -0.5) + lwmaSlope * 0.5));
+  const C_1min    = Math.max(-1, Math.min(1, (ghScore/100) * 0.6 + lwmaSlope * 0.4));
+
+  // RVI proxy: (Close-Open)/(High-Low)
+  const rviProxy  = (cHigh > cLow) ? (cClose - cOpen) / (cHigh - cLow) : 0;
+  const C_tick    = Math.max(-1, Math.min(1, rviProxy * 0.6 + (priceAboveVWAP ? 0.4 : -0.4)));
+
+  const cvec = [C_macro, C_weekly, C_daily, C_hourly, C_5min, C_1min, C_tick];
+  const direction = ghScore > 0 ? 1 : -1;
+  const aligned = cvec.filter(c => c * direction > 0.1).length;
+  const alignMetric = aligned / 7;
+  const winProb = 0.50 + alignMetric * 0.22;
+
+  // ── VOLATILITY REGIME / STATE MACHINE ─────────────────────
+  let regime, regimeClass, regimeDesc, regimeProbNote;
+  if (volRegime < 0.75) {
+    regime = 'COMPRESSION'; regimeClass = 'compression';
+    regimeDesc = 'Breakout imminent · 75% probability';
+    regimeProbNote = 'State 1: Low vol + balanced conviction';
+  } else if (volRegime < 1.6) {
+    regime = 'DISPLACEMENT'; regimeClass = 'displacement';
+    regimeDesc = 'Continuation bias · 62-65% probability';
+    regimeProbNote = 'State 2: Rising vol + directional conviction';
+  } else {
+    regime = 'EXHAUSTION'; regimeClass = 'exhaustion';
+    regimeDesc = 'Reversal risk HIGH · 80-85% probability';
+    regimeProbNote = 'State 3: Extreme vol + one-sided flow';
+  }
+
+  // ── ENTRY PRECISION SCORE (Layer 2) ───────────────────────
+  const priceLWMADiff = (price - lwma31) / lwma31;
+  const sigma_est = lwma31 * 0.008; // ~0.8% estimated σ
+  const lwma_upper = lwma31 + 2 * sigma_est;
+  const lwma_lower = lwma31 - 2 * sigma_est;
+  const env_upper  = prevClose * 1.021;
+  const env_lower  = prevClose * 0.979;
+
+  let eps;
+  if (price < lwma_lower && price < env_lower)       eps = 1.0;
+  else if (price < lwma_lower || price < env_lower)  eps = 0.75;
+  else if (price > lwma_upper && price > env_upper)  eps = 0.0;
+  else if (price > lwma_upper || price > env_upper)  eps = 0.25;
+  else                                               eps = 0.5;
+
+  // Reverse for short trades
+  const tradeDir = ghScore >= 0 ? 'LONG' : 'SHORT';
+  const epsAdj = (tradeDir === 'SHORT') ? (1.0 - eps) : eps;
+
+  // ── 1232 ALIGNMENT MATRIX (ZETA) ──────────────────────────
+  const layers = [
+    { l:'L-7', code:'MAC', val: ghScore,               threshold: 20,  sign: 1 },
+    { l:'L-6', code:'CON', val: consciousnessScore*100,threshold: 20,  sign: 1 },
+    { l:'L-4', code:'TRD', val: dailyTrend * 100,      threshold: 10,  sign: 1 },
+    { l:'L-3', code:'FUT', val: (priceAboveVWAP?1:-1)*100, threshold:10, sign:1 },
+    { l:'L-2', code:'PRC', val: (priceAboveLWMA?1:-1)*100, threshold:10, sign:1 },
+    { l:'L-1', code:'MOM', val: lwmaSlope * 100,       threshold: 0,   sign: 1 },
+  ];
+
+  let zetaCount = 0;
+  layers.forEach((la, i) => {
+    const elVal    = g('mat-l'+la.l.replace('L-','')+'-val');
+    const elStatus = g('mat-l'+la.l.replace('L-','')+'-status');
+    if(elVal) elVal.textContent = fmt(la.val,0);
+    if(elStatus) statusBadge(elStatus, la.val * direction, la.threshold);
+    if (la.val * direction > la.threshold) zetaCount++;
+  });
+
+  const zetaRatio = zetaCount + '/' + layers.length;
+  g('mat-zeta-val').textContent = zetaRatio;
+
+  // Zeta score label
+  const zetaPct = zetaCount / layers.length;
+  let zetaLabel, zetaColor;
+  if (zetaPct >= 0.83)       { zetaLabel='AGGRESSIVE'; zetaColor='var(--green)'; }
+  else if (zetaPct >= 0.50)  { zetaLabel='CONSERVATIVE'; zetaColor='var(--amber)'; }
+  else                        { zetaLabel='NO TRADE'; zetaColor='var(--red)'; }
+
+  // ── FRICTION INDEX ─────────────────────────────────────────
+  const priceMove = Math.abs(price - prevClose) / prevClose;
+  const frictionIdx = Math.min(0.99, 0.3 + (volRegime - 1.0) * 0.2 + (isChasing ? 0.1 : 0));
+  const infoSurprise = Math.min(1.0, priceMove * 20);
+  const exploitScore = frictionIdx * infoSurprise * alignMetric;
+
+  // ── POSITION SIZING ────────────────────────────────────────
+  const conviction = (alignMetric * 0.5 + Math.abs(ghScore)/100 * 0.5);
+  let riskPctAdj;
+  if (conviction > 0.75)      riskPctAdj = riskPctIn;
+  else if (conviction > 0.60) riskPctAdj = Math.min(riskPctIn, 1.5);
+  else if (conviction > 0.50) riskPctAdj = Math.min(riskPctIn, 1.0);
+  else                        riskPctAdj = 0;
+
+  const maxRiskDollar  = account * (riskPctIn / 100);
+  const adjRiskDollar  = account * (riskPctAdj / 100);
+  const stopDist       = Math.abs(entryPrice - stopPrice);
+  const units          = stopDist > 0 ? Math.floor(adjRiskDollar / stopDist) : 0;
+
+  const r1 = target1 ? Math.abs(target1 - entryPrice) / stopDist : 0;
+  const r2 = target2 ? Math.abs(target2 - entryPrice) / stopDist : 0;
+  const r3 = target3 ? Math.abs(target3 - entryPrice) / stopDist : 0;
+  const avgRR = 0.5 * r1 + 0.3 * r2 + 0.2 * r3;
+
+  // Kelly
+  const pw = winProb;
+  const pl = 1 - pw;
+  const kelly = avgRR > 0 ? ((pw * avgRR - pl) / avgRR) : 0;
+
+  // Expected Value per unit risk
+  const ev_unit = pw * avgRR - pl * 1.0;
+  const ev_dollar = ev_unit * adjRiskDollar;
+
+  // Annual EV estimate: assume 200 trades/year
+  const annualEV = ev_dollar * 200 * 0.65; // 65% trade capture
+
+  // ── RENDER ALL ──────────────────────────────────────────────
+
+  // GH Score
+  g('ghScoreNum').textContent = fmt(ghScore,1);
+  setColor(g('ghScoreNum'), ghScore, 10);
+  g('ghScoreSmall').textContent = fmt(ghScore,1);
+  setColor(g('ghScoreSmall'), ghScore, 10);
+  const needlePct = ((ghScore + 100) / 200) * 100;
+  g('ghNeedle').style.left = needlePct + '%';
+
+  // Component bars
+  const scaledFut = futScore;
+  const scaledGlob = macroScore;
+  setBar('bar-futures', scaledFut); g('lbl-futures').textContent = fmt(scaledFut,1);
+  setBar('bar-global',  scaledGlob); g('lbl-global').textContent  = fmt(scaledGlob,1);
+  const optScaled = optionsEst * 0.5;
+  setBar('bar-options', optScaled); g('lbl-options').textContent = fmt(optionsEst,1);
+  setBar('bar-econ', econEst * 0.5); g('lbl-econ').textContent   = fmt(econEst,1);
+
+  g('gh-formula-display').innerHTML =
+    `GH = 0.40×(${fmt(futScore,1)}) + 0.30×(${fmt(macroScore,1)}) + 0.20×(${fmt(optionsEst,1)}) + 0.10×(${fmt(econEst,1)}) = <b style="color:${ghScore>0?'var(--green)':'var(--red)'}">${fmt(ghScore,1)}</b>`;
+
+  // Gap
+  g('gapPct').innerHTML = fmt(gap_pct,2) + '<span class="stat-unit">%</span>';
+  setColor(g('gapPct'), -gap_pct, 0.5); // warn on large gap
+  g('gapWarning').textContent = isChasing ? '⚠ CHASING THE GAP' : gap_pct === 0 ? 'FLAT' : 'WITHIN BOUNDS';
+  g('gapWarning').style.color = isChasing ? 'var(--red)' : 'var(--green)';
+
+  g('priceVwap').textContent = priceAboveVWAP ? 'ABOVE ▲' : 'BELOW ▼';
+  g('priceVwap').style.color = priceAboveVWAP ? 'var(--green)' : 'var(--red)';
+
+  g('rsiSignal').textContent = rsi_overbought ? '↑ OVERBOUGHT' : rsi_oversold ? '↓ OVERSOLD' : `RSI ${rsi.toFixed(1)} NEUTRAL`;
+  g('rsiSignal').style.color = rsi_overbought ? 'var(--red)' : rsi_oversold ? 'var(--green)' : 'var(--amber)';
+
+  const hookLabel = isHook ? 'THE HOOK 🪝' : isTrap ? 'THE TRAP ⚠' : isWhipsaw ? 'WHIPSAW ⚡' : 'TRANSITIONAL';
+  const hookColor = isHook ? 'var(--green)' : isTrap ? 'var(--amber)' : 'var(--red)';
+  const hookDesc  = isHook ? 'Bullish continuation setup — Price>VWAP + LWMA↑'
+    : isTrap ? 'Mean reversion risk — Below VWAP but RSI oversold'
+    : isWhipsaw ? 'Avoid — Flat momentum, wait for structure'
+    : 'Mixed signal — Reduce position size';
+  g('hookTrap').textContent = hookLabel;
+  g('hookTrap').style.color = hookColor;
+  g('hookTrapDesc').textContent = hookDesc;
+
+  // Conviction Vector
+  const cvIds = ['cv-macro','cv-weekly','cv-daily','cv-hourly','cv-5min','cv-1min','cv-tick'];
+  const cvVals = [C_macro, C_weekly, C_daily, C_hourly, C_5min, C_1min, C_tick];
+  cvIds.forEach((id,i) => {
+    setCvecBar(id, cvVals[i]);
+    const vEl = g(id+'-val');
+    vEl.textContent = fmt(cvVals[i],2);
+    setColor(vEl, cvVals[i], 0.1);
+  });
+
+  g('alignMetric').textContent = (alignMetric).toFixed(2);
+  setColor(g('alignMetric'), alignMetric - 0.57, 0.05);
+  g('alignSmall').innerHTML = aligned + '<span class="stat-unit">/7</span>';
+  setColor(g('alignSmall'), aligned - 4, 0.1);
+  g('winProb').innerHTML = (winProb*100).toFixed(1) + '<span class="stat-unit">%</span>';
+  setColor(g('winProb'), winProb - 0.60, 0.03);
+  g('consciousnessScore').textContent = fmt(consciousnessScore,2);
+  setColor(g('consciousnessScore'), consciousnessScore, 0.1);
+  g('winProbGauge').textContent = (winProb*100).toFixed(1)+'%';
+  setColor(g('winProbGauge'), winProb - 0.60, 0.03);
+
+  // State machine bars
+  const segs = document.querySelectorAll('.state-seg');
+  segs.forEach(s => { s.className='state-seg'; });
+  if (regime === 'COMPRESSION') {
+    ['seg-comp-1','seg-comp-2','seg-comp-3'].forEach(id => g(id) && (g(id).className = 'state-seg active-compression'));
+  } else if (regime === 'DISPLACEMENT') {
+    ['seg-disp-1','seg-disp-2','seg-disp-3'].forEach(id => g(id) && (g(id).className = 'state-seg active-displacement'));
+  } else {
+    ['seg-exh-1','seg-exh-2','seg-exh-3'].forEach(id => g(id) && (g(id).className = 'state-seg active-exhaustion'));
+  }
+  g('regimeDisplay').textContent = regime;
+  g('regimeDisplay').style.color = regime==='COMPRESSION'?'var(--amber)':regime==='DISPLACEMENT'?'var(--blue)':'var(--red)';
+  g('regimeDesc').textContent = regimeDesc;
+
+  // Matrix
+  g('mat-zeta-val').textContent = zetaRatio;
+  g('mat-zeta-status').textContent = zetaLabel;
+  g('mat-zeta-status').style.color = zetaColor;
+  g('mat-zeta-status').style.borderColor = zetaColor;
+  g('zetaScore').innerHTML = zetaRatio;
+  g('zetaScore').style.color = zetaColor;
+
+  // EPS
+  g('epsBar').style.width = (epsAdj * 100) + '%';
+  g('epsBar').style.background = epsAdj > 0.7 ? 'var(--green)' : epsAdj < 0.3 ? 'var(--red)' : 'var(--amber)';
+  g('epsVal').textContent = epsAdj.toFixed(2);
+  g('epsVal').style.color = epsAdj > 0.7 ? 'var(--green)' : epsAdj < 0.3 ? 'var(--red)' : 'var(--amber)';
+  g('epsDesc').textContent = epsAdj >= 1.0 ? 'STRONG ENTRY — Price at lower band (long bias)' :
+    epsAdj >= 0.75 ? 'GOOD ENTRY — One band broken' :
+    epsAdj >= 0.50 ? 'FAIR VALUE — Near LWMA midpoint' :
+    epsAdj >= 0.25 ? 'EXTENDED — Near upper band, wait for pullback' :
+    'OVEREXTENDED — Do not chase, potential exhaustion';
+
+  // RVI & Vol
+  g('rviProxy').textContent = fmt(rviProxy,3);
+  setColor(g('rviProxy'), rviProxy - 0.5, 0.1);
+  const rviSignalTxt = rviProxy > 0.75 ? '⚠ EDGE WEAKENING (long)' : rviProxy < 0.25 ? '⚠ EDGE WEAKENING (short)' : '✔ RVI WITHIN RANGE';
+  g('rviSignal').textContent = rviSignalTxt;
+  g('rviSignal').style.color = (Math.abs(rviProxy-0.5) > 0.25) ? 'var(--red)' : 'var(--green)';
+
+  g('volExtreme').textContent = volRegime.toFixed(1) + '× avg';
+  g('volExtreme').style.color = volRegime > 1.75 ? 'var(--red)' : volRegime < 0.6 ? 'var(--amber)' : 'var(--green)';
+  g('volExtremeDesc').textContent = volRegime > 1.75 ? 'EXHAUSTION — Exit signals active' : volRegime < 0.6 ? 'COMPRESSION — Breakout imminent' : 'NORMAL — Hold positions';
+
+  // Friction
+  g('frictionIdx').textContent = frictionIdx.toFixed(3);
+  g('frictionIdx').style.color = frictionIdx > 0.5 ? 'var(--green)' : 'var(--amber)';
+  g('infoSurprise').textContent = infoSurprise.toFixed(3);
+  g('infoSurprise').style.color = infoSurprise > 0.3 ? 'var(--green)' : 'var(--text-dim)';
+  g('exploitScore').textContent = exploitScore.toFixed(4);
+  g('exploitScore').style.color = exploitScore > 0.1 ? 'var(--green)' : exploitScore > 0.05 ? 'var(--amber)' : 'var(--red)';
+
+  const frPts = [];
+  if (isHook) frPts.push('<span class="bull">● FP-1: Overnight Gap + Institutional Positioning (64-68% win)</span>');
+  if (priceAboveLWMA !== priceAboveVWAP) frPts.push('<span class="neut">● FP-2: Intraday Pullback to Institutional Levels (61-66% win)</span>');
+  if (volRegime > 1.6) frPts.push('<span class="bear">● FP-3: 4-Hour Exhaustion Reversal (58-64% win)</span>');
+  if (!isHook && !isTrap) frPts.push('<span class="dim">● FP-4: Daily Structure in Transition — Monitor</span>');
+  if (isHighConvMacro) frPts.push('<span class="bull">● FP-5: Weekly Institutional Rebalancing Signal (59-65% win)</span>');
+  g('frictionPoints').innerHTML = frPts.length ? frPts.join('<br>') : '<span class="dim">No dominant friction point detected</span>';
+
+  const evUnitDisplay = (ev_unit >= 0 ? '+' : '') + ev_unit.toFixed(3) + 'R';
+  g('evResult').textContent = evUnitDisplay;
+  g('evResult').style.color = ev_unit > 0 ? 'var(--green)' : 'var(--red)';
+  g('evBreakdown').textContent = `Pw=${(pw*100).toFixed(1)}% × Rw=${avgRR.toFixed(2)}R − Pl=${(pl*100).toFixed(1)}% × 1.0R = ${evUnitDisplay}`;
+
+  // Position Calc
+  g('pc-maxrisk').textContent = fmtUSD(maxRiskDollar);
+  g('pc-adjrisk').textContent = fmtUSD(adjRiskDollar);
+  g('pc-stopdist').textContent = '$' + stopDist.toFixed(2);
+  g('pc-units').textContent = units.toLocaleString() + ' units';
+  g('pc-rr1').textContent = r1 > 0 ? r1.toFixed(2) + ':1' : '—';
+  g('pc-rr2').textContent = r2 > 0 ? r2.toFixed(2) + ':1' : '—';
+  g('pc-rr3').textContent = r3 > 0 ? r3.toFixed(2) + ':1' : '—';
+  g('pc-avgrr').textContent = avgRR > 0 ? avgRR.toFixed(2) + ':1' : '—';
+  setColor(g('pc-avgrr'), avgRR - 2, 0.5);
+  g('pc-ev').textContent = ev_dollar > 0 ? '+' + fmtUSD(ev_dollar) : '-' + fmtUSD(Math.abs(ev_dollar));
+  setColor(g('pc-ev'), ev_dollar, 0);
+  g('pc-sharpe').textContent = ev_unit > 0 ? 'Positive contribution' : 'Negative — review setup';
+  g('pc-sharpe').style.color = ev_unit > 0 ? 'var(--green)' : 'var(--red)';
+  g('kellyFraction').textContent = (kelly*100).toFixed(1)+'% (use '+(kelly*25).toFixed(1)+'%-'+(kelly*50).toFixed(1)+'% in practice)';
+  setColor(g('kellyFraction'), kelly, 0.05);
+
+  const scaleOut = target1 && target2 && target3 ?
+    `EXIT_50% at T1 = ${target1.toFixed(2)} (+${r1.toFixed(2)}R)\nEXIT_30% at T2 = ${target2.toFixed(2)} (+${r2.toFixed(2)}R)\nEXIT_20% at T3 = ${target3.toFixed(2)} (+${r3.toFixed(2)}R)\nSTOP_LOSS = ${stopPrice.toFixed(2)} (-1.00R)\nWORST CASE: -${fmtUSD(adjRiskDollar)} | BEST CASE: +${fmtUSD(ev_dollar*3)}` :
+    'Set T1/T2/T3 in fields above';
+  g('scaleOutPlan').textContent = scaleOut;
+
+  // ── ALIGNMENT BARS ──────────────────────────────────────────
+  setBar('macroBar', macroScore); g('macroBarLbl').textContent = fmt(macroScore,1);
+  const microScore = (priceAboveLWMA ? 50 : -50) + lwmaSlope * 30 + (priceAboveVWAP ? 20 : -20);
+  setBar('microBar', microScore); g('microBarLbl').textContent = fmt(microScore,1);
+  const strength = ghScore;
+  setBar('strengthBar', strength);
+  g('strengthBarLbl').textContent = fmt(strength,1);
+  g('strengthBarVal').textContent = fmt(strength,1);
+
+  // ── CHECKLIST ──────────────────────────────────────────────
+  setCheck('chk-gap',    !isChasing ? 'pass' : 'fail');
+  setCheck('chk-vwap',   (priceAboveVWAP && ghScore > 0) || (!priceAboveVWAP && ghScore < 0) ? 'pass' : 'warn');
+  setCheck('chk-lwma',   (priceAboveLWMA && ghScore > 0) || (!priceAboveLWMA && ghScore < 0) ? 'pass' : 'warn');
+  setCheck('chk-macro',  Math.abs(macroScore) > 30 && isHighConvMacro ? 'pass' : isLowConvMacro ? 'fail' : 'warn');
+  setCheck('chk-align',  aligned >= 4 ? 'pass' : aligned >= 3 ? 'warn' : 'fail');
+  setCheck('chk-rr',     avgRR >= 2 ? 'pass' : avgRR >= 1.5 ? 'warn' : 'fail');
+  setCheck('chk-regime', regime !== 'EXHAUSTION' ? 'pass' : 'warn');
+
+  // ── VERDICT BOX ────────────────────────────────────────────
+  let verdict, verdictSub, boxClass;
+  if (isChasing) {
+    verdict='NO TRADE'; verdictSub='CHASING THE GAP — RISK PROFILE DESTROYED'; boxClass='no-trade';
+    g('verdictMain').style.color='var(--amber)';
+  } else if (zetaPct >= 0.83 && alignMetric >= 0.57 && !isChasing) {
+    if (ghScore > 20) {
+      verdict = '🟢 AGGRESSIVE BULL'; verdictSub = `ENTRY: BUY RETEST LWMA-31 · ZETA ${zetaRatio}`; boxClass='bull-active';
+      g('verdictMain').style.color='var(--green)';
+    } else if (ghScore < -20) {
+      verdict = '🔴 AGGRESSIVE BEAR'; verdictSub = `ENTRY: SELL PULLBACK TO VWAP · ZETA ${zetaRatio}`; boxClass='bear-active';
+      g('verdictMain').style.color='var(--red)';
+    } else {
+      verdict='⚪ NEUTRAL'; verdictSub='SCORE ALIGNED BUT SIGNAL WEAK'; boxClass='no-trade';
+      g('verdictMain').style.color='var(--amber)';
+    }
+  } else if (zetaPct >= 0.50) {
+    verdict = ghScore > 10 ? '🟡 CONSERVATIVE BULL' : ghScore < -10 ? '🟡 CONSERVATIVE BEAR' : '⚪ WAIT';
+    verdictSub = `50% POSITION · ZETA ${zetaRatio} · PARTIAL ALIGNMENT`;
+    boxClass='no-trade';
+    g('verdictMain').style.color='var(--amber)';
+  } else {
+    verdict='⛔ NO TRADE'; verdictSub=`ZETA ${zetaRatio} — INSUFFICIENT ALIGNMENT`; boxClass='no-trade';
+    g('verdictMain').style.color='var(--red)';
+  }
+
+  g('verdictMain').textContent = verdict;
+  g('verdictSub').textContent  = verdictSub;
+  g('verdictBox').className    = 'verdict-box ' + boxClass;
+
+  // Risk summary
+  g('maxDailyLoss').textContent = fmtUSD(maxRiskDollar * 3) + ' (3-trade max)';
+  g('convMultiplier').textContent = (riskPctAdj / riskPctIn * 100).toFixed(0) + '%';
+  setColor(g('convMultiplier'), riskPctAdj - riskPctIn * 0.5, 0);
+
+  const tradeClasses = zetaPct >= 0.83 ? 'HIGH CONVICTION' : zetaPct >= 0.5 ? 'MODERATE' : 'NO TRADE';
+  g('tradeClass').textContent = tradeClasses;
+  setColor(g('tradeClass'), zetaPct - 0.6, 0.1);
+
+  g('annualEV').textContent = '+' + fmtUSD(annualEV) + '/yr';
+}
+
+// ── RESET DEFAULTS ──────────────────────────────────────────
+function resetDefaults() {
+  g('tickerInput').value='ES'; g('accountSize').value='100000'; g('riskPct').value='1.5';
+  g('nikkei').value='0.8'; g('hsi').value='0.6'; g('dax').value='-0.3'; g('ftse').value='0.2';
+  g('currentPrice').value='5820'; g('vwap').value='5805'; g('lwma31').value='5795';
+  g('lwmaSlope').value='1'; g('rsi').value='58'; g('prevClose').value='5790';
+  g('candleOpen').value='5808'; g('candleHigh').value='5835'; g('candleLow').value='5800'; g('candleClose').value='5825';
+  g('sma200pos').value='1'; g('sma50pos').value='1'; g('sma20pos').value='1';
+  g('dailyTrend').value='1'; g('volRegime').value='1.0'; g('volumeSignal').value='0.5';
+  g('entryPrice').value='5820'; g('stopPrice').value='5761'; g('target1').value='5878'; g('target2').value='5936'; g('target3').value='5994';
+  calculate();
+}
+
+// Auto-calc on any input change
+document.querySelectorAll('input, select').forEach(el => {
+  el.addEventListener('change', calculate);
+  el.addEventListener('input', calculate);
+});
+
+// Initial calculation
+calculate();
+</script>
+</body>
+</html>
